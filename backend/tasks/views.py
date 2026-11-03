@@ -1,5 +1,6 @@
 import json
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -87,8 +88,11 @@ class TaskListView(View):
             return JsonResponse(INVALID, status=400)
         title, content, subtasks = parsed
 
-        task = Task.objects.create(title=title, content=content, author=get_default_author())
-        create_subtasks(task, subtasks or [])
+        with transaction.atomic():
+            task = Task.objects.create(
+                title=title, content=content, author=get_default_author()
+            )
+            create_subtasks(task, subtasks or [])
         return JsonResponse(task_to_detail(task), status=201)
 
 
@@ -105,12 +109,13 @@ class TaskDetailView(View):
             return JsonResponse(INVALID, status=400)
         title, content, subtasks = parsed
 
-        task.title = title
-        task.content = content
-        task.save()
-        if subtasks is not None:
-            task.subtasks.all().delete()
-            create_subtasks(task, subtasks)
+        with transaction.atomic():
+            task.title = title
+            task.content = content
+            task.save()
+            if subtasks is not None:
+                task.subtasks.all().delete()
+                create_subtasks(task, subtasks)
         return JsonResponse(task_to_detail(task))
 
     def delete(self, request, pk):

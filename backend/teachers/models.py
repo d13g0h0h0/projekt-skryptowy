@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -28,7 +29,7 @@ class TeacherStudentLink(models.Model):
 def validate_specialization(value: list[str]) -> None:
     invalid = set(value) - set(TeacherProfile.Specialization.values)
     if invalid:
-        raise ValueError(f"Invalid set of specializations: {invalid}")
+        raise ValidationError(f"Invalid set of specializations: {invalid}")
 
 class TeacherProfile(models.Model):
     class Specialization(models.TextChoices):
@@ -38,5 +39,5 @@ class TeacherProfile(models.Model):
         NUMBER_THEORY = "number_theory"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,primary_key=True, related_name="teacher_profile")
-    bio = models.TextField
+    bio = models.TextField(blank=True)
     specialization = models.JSONField(default=list,blank=True, validators=[validate_specialization])
