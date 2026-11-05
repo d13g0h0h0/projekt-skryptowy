@@ -1,1 +1,7 @@
 .idea
+.env
+dozzle/users.yml
+__pycache__/
+*.pyc
+.venv/
+node_modules/
