@@ -1,0 +1,43 @@
+name: deploy-frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Build & restart frontend on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd ~/app
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose up --build -d --remove-orphans frontend caddy
+            docker image prune -f
+
+      - name: Smoke test site
+        run: |
+          url="${{ vars.SITE_URL }}"
+          for i in $(seq 1 12); do
+            if curl --fail --silent --show-error -o /dev/null "$url"; then
+              echo "OK: $url"; exit 0
+            fi
+            echo "attempt $i failed, retrying in 5s..."; sleep 5
+          done
+          echo "::error::site did not come up at $url"; exit 1

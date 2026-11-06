@@ -12,6 +12,5 @@ COPY . .
 
 RUN DJANGO_SECRET_KEY=build python manage.py collectstatic --noinput
 
-
 EXPOSE 8000
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn projektskryptowybackend.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn projektskryptowybackend.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile -"]
