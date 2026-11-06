@@ -1,0 +1,7 @@
+{$SITE_ADDRESS} {
+    reverse_proxy frontend:80
+}
+
+{$PGADMIN_ADDRESS} {
+    reverse_proxy pgadmin:80
+}
