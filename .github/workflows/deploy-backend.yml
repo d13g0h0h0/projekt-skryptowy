@@ -25,16 +25,19 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           script: |
-            cd ~/app
-            git fetch origin main
-            git reset --hard origin/main
+            set -e
+            cd ~/app || { echo 'Brak ~/app na serwerze – najpierw git clone (server-setup.md, pkt 7)'; exit 1; }
+            git fetch origin deploy
+            git reset --hard origin/deploy
             docker compose up --build -d --remove-orphans db backend caddy
             docker image prune -f
 
       - name: Smoke test GET /health
         run: |
+          if [ -z "${{ vars.API_URL }}" ]; then
+            echo "::error::Brak zmiennej API_URL (Settings → Secrets and variables → Actions → Variables)"; exit 1
+          fi
           url="${{ vars.API_URL }}/health"
           for i in $(seq 1 12); do
             if curl --fail --silent --show-error "$url"; then
