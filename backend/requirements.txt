@@ -3,3 +3,4 @@ gunicorn>=23.0
 whitenoise>=6.9
 psycopg[binary]>=3.2
 django-cors-headers>=4.6
+django-unfold>=0.40

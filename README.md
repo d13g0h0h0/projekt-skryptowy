@@ -31,7 +31,7 @@ python manage.py test
 Run tests for the `tasks` app only:
 
 ```
-python manage.py test tasks
+python manage.py test apps.tasks
 ```
 
 Run a single test class or test:

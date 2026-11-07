@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Solution(models.Model): #add images in v2
-    task = models.ForeignKey("app.tasks.Task", on_delete=models.CASCADE, related_name="solutions")
+    task = models.ForeignKey("tasks.Task", on_delete=models.CASCADE, related_name="solutions")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="solutions")
     content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,7 +10,7 @@ class Solution(models.Model): #add images in v2
 
 class SolutionPart(models.Model):
     solution = models.ForeignKey(Solution, on_delete=models.CASCADE,related_name="parts")
-    subtask = models.ForeignKey("app.tasks.Subtask", on_delete=models.PROTECT, related_name="solution_parts")
+    subtask = models.ForeignKey("tasks.Subtask", on_delete=models.PROTECT, related_name="solution_parts")
     content = models.TextField()
 
 class Vote(models.Model):
@@ -25,7 +25,7 @@ class Vote(models.Model):
 
 class GivenUpTask (models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="give_ups")
-    task = models.ForeignKey("app.tasks.Task", on_delete=models.CASCADE, related_name="give_ups")
+    task = models.ForeignKey("tasks.Task", on_delete=models.CASCADE, related_name="give_ups")
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Feedback (models.Model):
