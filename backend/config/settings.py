@@ -43,10 +43,11 @@ USE_X_FORWARDED_HOST = True
 # Application definition
 
 INSTALLED_APPS = [
-    'tasks',
-    'accounts',
-    'solutions',
-    'teachers',
+    'app.tasks',
+    'app.accounts',
+    'app.solutions',
+    'app.teachers',
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -56,7 +57,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-AUTH_USER_MODEL = "accounts.User"
+AUTH_USER_MODEL = "app.accounts.User"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -70,7 +71,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'projektskryptowybackend.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -88,7 +89,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'projektskryptowybackend.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
