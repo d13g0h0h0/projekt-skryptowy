@@ -1,0 +1,45 @@
+[
+  {
+    "id": "1234",
+    "title": "Pierwsze zadanie",
+    "content": "Oto pierwsze zadanie.",
+    "author": {
+      "id": "5678",
+      "username": "Anna Nowak"
+    },
+    "created_at": "2012-04-23T18:25:43.511Z",
+    "updated_at": "2022-05-20T18:25:43.511Z"
+  },
+  {
+    "id": "4321",
+    "title": "Drugie zadanie",
+    "content": "Oto drugie zadanie.",
+    "author": {
+      "id": "5678",
+      "username": "Kamil Nowak"
+    },
+    "created_at": "2012-04-23T18:25:43.511Z",
+    "updated_at": "2012-04-23T18:25:43.511Z",
+    "subtasks": [
+      {
+        "id": "0987",
+        "content": "Oto pierwsze podzadanie."
+      },
+      {
+        "id": "2384",
+        "content": "Oto drugie podzadanie."
+      }
+    ]
+  },
+  {
+    "id": "9876",
+    "title": "Trzecie zadanie",
+    "content": "Oto trzecie zadanie.",
+    "author": {
+      "id": "5678",
+      "username": "Kamil Nowak"
+    },
+    "created_at": "2023-11-01T18:25:43.511Z",
+    "updated_at": "2023-11-01T18:25:43.511Z"
+  }
+]
