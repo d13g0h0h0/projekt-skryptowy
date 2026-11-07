@@ -7,5 +7,5 @@ select = ["E", "F"]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "projektskryptowybackend.settings"
+DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py"]
