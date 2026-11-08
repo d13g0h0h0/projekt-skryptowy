@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { tasksApi } from "@/api";
+function seed_task() {
+  tasksApi.create({"title": "Pierwsze zadanie", "content": "Treść pierwszego zadania."});
+}
+
 </script>
 
 <template>
   <nav>
     <RouterLink to="/">Home</RouterLink> |
+    <button @click="seed_task()">Zaseeduj taski</button>
   </nav>
   <div id="view">
     <RouterView />

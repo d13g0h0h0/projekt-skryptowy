@@ -4,12 +4,12 @@ type UserId = string & { __brand: "user" };
 export type Author = {
   id: UserId
   username: string
-}
+};
 
 export type Subtask = {
   id: TaskId
   content: string
-}
+};
 
 //TODO: check out Zod for better type enforcement from parsed JSON
 export type Task = {
@@ -20,4 +20,7 @@ export type Task = {
   created_at: Date,
   updated_at: Date,
   subtasks?: Subtask[]
-}
+};
+
+export type CreateTaskInput = Pick<Task, "title" | "content">;
+export type UpdateTaskInput = Partial<CreateTaskInput>;
