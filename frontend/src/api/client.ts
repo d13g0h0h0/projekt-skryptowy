@@ -1,25 +1,43 @@
-import type { Task } from "./types.ts";
+const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
-const BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}/api${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    ...init,
-  })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return res.status === 204 ? (undefined as T) : res.json()
-}
-
-export async function requestTaskList(): Promise<Task[]> {
-  const response = await fetch("/sample_tasks.json");
-  return await response.json();
-}
-
-export async function requestTask(id: string): Promise<Task | void> {
-  const all_tasks = await requestTaskList();
-  for (const task of all_tasks) {
-    if (task.id === id) return task;
+export class ApiError extends Error {
+  constructor(public status: number, message: string, public body?: unknown) {
+    super(message)
+    this.name = 'ApiError'
   }
+}
+
+interface RequestOptions extends Omit<RequestInit, 'body'> {
+  body?: unknown
+  params?: Record<string, string | number | boolean | undefined>
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { body, params, headers, ...rest } = options
+
+  const query = params
+    ? '?' + new URLSearchParams(
+    Object.entries(params)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => [k, String(v)]),
+  )
+    : ''
+
+  const res = await fetch(`${BASE_URL}${path}${query}`, {
+    ...rest,
+    headers: {
+      ...(body !== undefined && { 'Content-Type': 'application/json' }),
+      ...headers,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => undefined);
+    throw new ApiError(res.status, `Request failed: ${res.status}`, errorBody);
+  }
+
+  if (res.status === 204)
+    return undefined as T;
+  return await res.json() as Promise<T>;
 }

@@ -1,6 +1,21 @@
-import { requestTask, requestTaskList } from "@/api/client.ts";
+import { request } from "./client.ts";
+import { type Task, type CreateTaskInput, type UpdateTaskInput } from "./types.ts"
+
+const endpoint = "/api/tasks/";
 
 export const tasksApi = {
-  list: () => requestTaskList(),
-  get: (id: string) => requestTask(id)
+  list: (signal?: AbortSignal) =>
+    request<Task[]>(endpoint, { signal }),
+
+  get: (id: string, signal?: AbortSignal) =>
+    request<Task>(`${endpoint}${id}`, { signal }),
+
+  create: (input: CreateTaskInput) =>
+    request<Task>(endpoint, { method: 'POST', body: input }),
+
+  update: (id: string, input: UpdateTaskInput) =>
+    request<Task>(`${endpoint}${id}`, { method: 'PATCH', body: input }),
+
+  remove: (id: string) =>
+    request<void>(`${endpoint}${id}`, { method: 'DELETE' }),
 };
