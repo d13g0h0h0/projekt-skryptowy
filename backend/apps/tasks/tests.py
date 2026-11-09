@@ -133,7 +133,6 @@ class ListTaskTests(TaskApiTestCase):
     def test_list_is_sorted_by_updated_at_desc(self):
         first = self.make_task(title="first")
         self.make_task(title="second")
-        # wymuś nowszy updated_at dla pierwszego zadania
         first.title = "first (edited)"
         first.save()
         titles = [t["title"] for t in self.client.get(LIST_URL).json()]
