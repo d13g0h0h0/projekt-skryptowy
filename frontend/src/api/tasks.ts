@@ -13,8 +13,8 @@ export const tasksApi = {
   create: (input: CreateTaskInput) =>
     request<Task>(endpoint, { method: 'POST', body: input }),
 
-  update: (id: string, input: UpdateTaskInput) =>
-    request<Task>(`${endpoint}${id}`, { method: 'PATCH', body: input }),
+  update: (id: string, input: CreateTaskInput) =>
+    request<Task>(`${endpoint}${id}`, { method: 'PUT', body: input }),
 
   remove: (id: string) =>
     request<void>(`${endpoint}${id}`, { method: 'DELETE' }),

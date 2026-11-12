@@ -1,4 +1,5 @@
 type TaskId = string & { __brand: "task" };
+type SubTaskId = string & { __brand: "subtask" };
 type UserId = string & { __brand: "user" };
 
 export type Author = {
@@ -7,7 +8,7 @@ export type Author = {
 };
 
 export type Subtask = {
-  id: TaskId
+  id: SubTaskId
   content: string
 };
 
@@ -23,4 +24,3 @@ export type Task = {
 };
 
 export type CreateTaskInput = Pick<Task, "title" | "content">;
-export type UpdateTaskInput = Partial<CreateTaskInput>;
