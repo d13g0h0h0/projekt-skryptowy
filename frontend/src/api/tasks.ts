@@ -1,5 +1,5 @@
 import { request } from "./client.ts";
-import { type Task, type CreateTaskInput, type UpdateTaskInput } from "./types.ts"
+import { type Task, type CreateTaskInput } from "./types.ts"
 
 const endpoint = "/api/tasks/";
 
