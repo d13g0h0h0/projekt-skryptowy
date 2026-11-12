@@ -4,3 +4,6 @@ whitenoise>=6.9
 psycopg[binary]>=3.2
 django-cors-headers>=4.6
 django-unfold>=0.40
+djangorestframework>=3.16
+djangorestframework-simplejwt>=5.5
+drf-spectacular>=0.28

@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+from drf_spectacular.views import SpectacularAPIView
 
 from apps.tasks.health import health
 
@@ -24,4 +26,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/tasks/", include("apps.tasks.urls")),
     path("api/", include("apps.solutions.urls")),
+    path("api/auth/", include("apps.accounts.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", TemplateView.as_view(template_name="scalar.html")),
 ]

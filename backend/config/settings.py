@@ -35,7 +35,9 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.solutions',
     'apps.teachers',
+    'apps.logs',
     'unfold',
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,6 +46,35 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
 ]
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+        'database': {'class': 'apps.logs.handlers.DatabaseLogHandler', 'level': 'ERROR'},
+    },
+    'root': {'handlers': ['console', 'database'], 'level': 'INFO'},
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+        "apps.accounts.auth.HasScopes",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Projekt skryptowy API",
+    "VERSION": "1.0.0",
+}
 
 AUTH_USER_MODEL = "accounts.User"
 
