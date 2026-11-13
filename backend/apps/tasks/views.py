@@ -1,124 +1,74 @@
-import json
-from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.utils import extend_schema
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Task, SubTask
-
-
-MAX_TITLE = 255
-MAX_SUBTASK = 255
-
-def get_default_author():
-    # TEMPORARY - after adding auth, replace with getting author from request
-    User = get_user_model()
-    user, created = User.objects.get_or_create(
-        username="dev",
-        defaults={"email": "dev@example.com"},
-    )
-    if created:
-        user.set_unusable_password()
-        user.save()
-    return user
-
-def author_to_dict(user):
-    return {"id": user.id, "username": user.username}
+from .models import SubTask, Task
+from .serializers import TaskDetailSerializer, TaskSummarySerializer, TaskWriteSerializer
 
 
-def task_to_summary(task):
-    return {
-        "id": task.id,
-        "title": task.title,
-        "author": author_to_dict(task.author),
-        "created_at": task.created_at.isoformat(),
-        "updated_at": task.updated_at.isoformat(),
-    }
-
-
-def task_to_detail(task):
-    return {
-        **task_to_summary(task),
-        "content": task.content,
-        "subtasks": [
-            {"id": s.id, "content": s.content}
-            for s in task.subtasks.order_by("position")
-        ],
-    }
-
-def parse_body(request):
-    try:
-        data = json.loads(request.body)
-        title = data["title"].strip()
-        content = data["content"].strip()
-        subtasks = data.get("subtasks")
-        if subtasks is not None:
-            subtasks = [s["content"].strip() for s in subtasks]
-    except (ValueError, KeyError, TypeError, AttributeError):
-        return None
-
-    if not title or len(title) > MAX_TITLE or not content:
-        return None
-    if subtasks is not None and any(not c or len(c) > MAX_SUBTASK for c in subtasks):
-        return None
-    return title, content, subtasks
-
-
-def create_subtasks(task, contents):
+def create_subtasks(task, subtasks):
     SubTask.objects.bulk_create(
-        [SubTask(task=task, content=c, position=i) for i, c in enumerate(contents)]
+        [SubTask(task=task, content=s["content"], position=i) for i, s in enumerate(subtasks)]
     )
 
 
-INVALID = {"error": "Invalid request data. 'title' and 'content' are required."}
+def get_own_task(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    if task.author_id != request.user.id:
+        raise PermissionDenied("Only the author can modify this task.")
+    return task
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class TaskListView(View):
+class TaskListView(APIView):
+    required_scopes = {"GET": ["tasks:read"], "POST": ["tasks:write"]}
+
+    @extend_schema(responses=TaskSummarySerializer(many=True))
     def get(self, request):
-        tasks = Task.objects.prefetch_related("subtasks")
-        return JsonResponse([task_to_summary(t) for t in tasks], safe=False)
+        tasks = Task.objects.select_related("author")
+        return Response(TaskSummarySerializer(tasks, many=True).data)
 
+    @extend_schema(request=TaskWriteSerializer, responses={201: TaskDetailSerializer})
     def post(self, request):
-        parsed = parse_body(request)
-        if parsed is None:
-            return JsonResponse(INVALID, status=400)
-        title, content, subtasks = parsed
+        serializer = TaskWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         with transaction.atomic():
             task = Task.objects.create(
-                title=title, content=content, author=get_default_author()
+                title=data["title"], content=data["content"], author=request.user
             )
-            create_subtasks(task, subtasks or [])
-        return JsonResponse(task_to_detail(task), status=201)
+            create_subtasks(task, data.get("subtasks") or [])
+        return Response(TaskDetailSerializer(task).data, status=201)
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class TaskDetailView(View):
+class TaskDetailView(APIView):
+    required_scopes = {"GET": ["tasks:read"], "PUT": ["tasks:write"], "DELETE": ["tasks:write"]}
+
+    @extend_schema(responses=TaskDetailSerializer)
     def get(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
-        return JsonResponse(task_to_detail(task))
+        return Response(TaskDetailSerializer(task).data)
 
+    @extend_schema(request=TaskWriteSerializer, responses=TaskDetailSerializer)
     def put(self, request, pk):
-        task = get_object_or_404(Task, pk=pk)
-        parsed = parse_body(request)
-        if parsed is None:
-            return JsonResponse(INVALID, status=400)
-        title, content, subtasks = parsed
+        task = get_own_task(request, pk)
+        serializer = TaskWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         with transaction.atomic():
-            task.title = title
-            task.content = content
+            task.title = data["title"]
+            task.content = data["content"]
             task.save()
-            if subtasks is not None:
+            if data.get("subtasks") is not None:
                 task.subtasks.all().delete()
-                create_subtasks(task, subtasks)
-        return JsonResponse(task_to_detail(task))
+                create_subtasks(task, data["subtasks"])
+        return Response(TaskDetailSerializer(task).data)
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
-        task = get_object_or_404(Task, pk=pk)
-        task.delete()
-        return HttpResponse(status=204)
+        get_own_task(request, pk).delete()
+        return Response(status=204)
