@@ -31,6 +31,14 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             docker compose up --build -d --remove-orphans --no-deps db backend caddy
+            # Caddy nie podchwytuje zmian w Caddyfile sam z siebie: bind mount trzyma
+            # stary inode, a `caddy reload` zglasza sukces i dalej serwuje stara
+            # konfiguracje. Restart jest jedynym pewnym sposobem, wiec robimy go
+            # tylko wtedy, gdy plik w kontenerze rozni sie od tego w repo.
+            if ! docker compose exec -T caddy cat /etc/caddy/Caddyfile 2>/dev/null | diff -q - Caddyfile >/dev/null 2>&1; then
+              echo 'Caddyfile sie zmienil - restartuje caddy'
+              docker compose restart caddy
+            fi
             docker image prune -f
 
       - name: Smoke test GET /health
