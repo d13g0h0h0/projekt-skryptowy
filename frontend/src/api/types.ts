@@ -1,16 +1,21 @@
-type TaskId = string & { __brand: "task" };
-type SubTaskId = string & { __brand: "subtask" };
-type UserId = string & { __brand: "user" };
+export type TaskId = string & { __brand: "task" };
+export type SubTaskId = string & { __brand: "subtask" };
+export type UserId = string & { __brand: "user" };
+export type SolutionId = string & { __brand: "solution" };
+export type SolutionPartId = string & { __brand: "solution_part" };
+export type VoteId = string & { __brand: "vote" };
 
 export type Author = {
   id: UserId
   username: string
 };
 
-export type Subtask = {
+export type SubTask = {
   id: SubTaskId
   content: string
 };
+
+export type CreateSubTaskInput = Pick<SubTask, "content">;
 
 //TODO: check out Zod for better type enforcement from parsed JSON
 export type Task = {
@@ -20,7 +25,39 @@ export type Task = {
   author: Author
   created_at: Date,
   updated_at: Date,
-  subtasks?: Subtask[]
+  subtasks?: SubTask[]
 };
 
-export type CreateTaskInput = Pick<Task, "title" | "content">;
+export type CreateTaskInput = Pick<Task, "title" | "content" | "subtasks">;
+
+export type SolutionPart = {
+  id: SolutionPartId
+  subtask_id: SubTaskId
+  content: string
+};
+
+export type CreateSolutionPartInput = Pick<SolutionPart, "content" | "subtask_id">;
+
+export type VoteValueEnum = 1 | -1;
+
+export type Vote = {
+  id: VoteId
+  user: Author
+  value: VoteValueEnum
+  created_at: Date
+};
+
+export type CreateVoteInput = Pick<Vote, "value">;
+
+export type Solution = {
+  id: SolutionId
+  content: string
+  author: Author
+  created_at: Date
+  updated_at: Date
+  score: number
+  my_vote: VoteValueEnum | null
+  parts?: SolutionPart[]
+};
+
+export type CreateSolutionInput = Pick<Solution, "content" | "parts">;
