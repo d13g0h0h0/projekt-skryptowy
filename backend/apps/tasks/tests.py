@@ -16,8 +16,12 @@ def detail_url(pk):
 class TaskApiTestCase(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
-            username="hanna", email="hanna@example.com", password="pass12345"
+            username="hanna",
+            email="hanna@example.com",
+            password="pass12345",
+            role=get_user_model().Role.TEACHER,
         )
+        self.client.force_login(self.user)
 
     def post_json(self, url, data):
         return self.client.post(url, data=json.dumps(data), content_type="application/json")
@@ -49,17 +53,13 @@ class CreateTaskTests(TaskApiTestCase):
         self.assertIn("updated_at", body)
         self.assertEqual(Task.objects.count(), 1)
 
-    def test_create_sets_temporary_default_author(self):
+    def test_create_sets_author_to_logged_in_user(self):
         response = self.post_json(LIST_URL, self.payload())
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(Task.objects.get().author.username, "dev")
-        self.assertEqual(response.json()["author"]["username"], "dev")
-
-    def test_create_reuses_default_author(self):
-        self.post_json(LIST_URL, self.payload())
-        self.post_json(LIST_URL, self.payload(title="Second"))
-        self.assertEqual(Task.objects.count(), 2)
-        self.assertEqual(get_user_model().objects.filter(username="dev").count(), 1)
+        self.assertEqual(Task.objects.get().author, self.user)
+        self.assertEqual(
+            response.json()["author"], {"id": self.user.pk, "username": "hanna"}
+        )
 
     def test_create_task_with_subtasks(self):
         response = self.post_json(
@@ -175,14 +175,19 @@ class UpdateTaskTests(TaskApiTestCase):
         self.assertEqual(task.title, "new title")
         self.assertEqual(task.content, "new")
 
-    def test_update_does_not_change_author(self):
+    def test_update_of_someone_elses_task_is_forbidden(self):
         other = get_user_model().objects.create_user(
-            username="other", email="other@example.com", password="pass12345"
+            username="other",
+            email="other@example.com",
+            password="pass12345",
+            role=get_user_model().Role.TEACHER,
         )
-        task = self.make_task(author=other)
-        self.put_json(detail_url(task.pk), self.payload(content="x"))
+        task = self.make_task(author=other, title="theirs")
+        response = self.put_json(detail_url(task.pk), self.payload(content="x"))
+        self.assertEqual(response.status_code, 403)
         task.refresh_from_db()
         self.assertEqual(task.author, other)
+        self.assertEqual(task.content, "Some task")
 
     def test_update_without_subtasks_field_keeps_subtasks(self):
         task = self.make_task(subtasks=["a", "b"])

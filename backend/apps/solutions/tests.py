@@ -4,8 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.tasks.models import Task,SubTask
-from apps.tasks.views import get_default_author
+from apps.tasks.models import Task, SubTask
 
 from .models import Solution, SolutionPart, Vote
 
@@ -16,7 +15,8 @@ JSON = "application/json"
 class SolutionsTestCase(TestCase):
 
     def setUp(self):
-        self.user = get_default_author()  # the user the views act as for now ("dev")
+        self.user = User.objects.create_user("dev", email="dev@example.com", password="x")
+        self.client.force_login(self.user)
         self.other = User.objects.create_user("ola", email="ola@example.com", password="x")
         self.third = User.objects.create_user("ewa", email="ewa@example.com", password="x")
 
