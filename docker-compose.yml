@@ -56,24 +56,35 @@ services:
     depends_on:
       - frontend
       - backend
-      - pgadmin
-      - dozzle
     restart: unless-stopped
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
+  # pgweb zastapil pgadmina: ~8 MB RAM zamiast ~238 MB.
+  # Parametry polaczenia ida flagami, a nie DATABASE_URL, bo URL rozsypuje sie
+  # przy hasle ze znakami @ : / #.
+  # UWAGA: pgweb bez skonfigurowanego loginu wpuszcza KAZDEGO (HTTP 200),
+  # dlatego ponizsze ${...:?} celowo wywala deploy, gdy brakuje hasla w .env.
+  pgweb:
+    image: sosedoff/pgweb:latest
+    profiles: ["tools"]
+    command:
+      - --host=db
+      - --port=5432
+      - --user=${POSTGRES_USER}
+      - --pass=${POSTGRES_PASSWORD}
+      - --db=${POSTGRES_DB}
+      - --ssl=disable
+      - --lock-session
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
-    volumes:
-      - pgadmin:/var/lib/pgadmin
+      PGWEB_AUTH_USER: ${PGADMIN_EMAIL:?pgweb wymaga PGADMIN_EMAIL w .env}
+      PGWEB_AUTH_PASS: ${PGADMIN_PASSWORD:?pgweb wymaga PGADMIN_PASSWORD w .env}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   dozzle:
     image: amir20/dozzle:latest
+    profiles: ["tools"]
     environment:
       DOZZLE_NO_ANALYTICS: "true"
       DOZZLE_AUTH_PROVIDER: simple
@@ -84,6 +95,5 @@ services:
 
 volumes:
   pgdata:
-  pgadmin:
   caddy_data:
   caddy_config:
