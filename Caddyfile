@@ -9,7 +9,7 @@
 }
 
 {$PGADMIN_ADDRESS} {
-    reverse_proxy pgadmin:80
+    reverse_proxy pgweb:8081
 }
 
 {$DOZZLE_ADDRESS} {

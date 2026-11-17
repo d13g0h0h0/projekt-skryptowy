@@ -30,7 +30,7 @@ jobs:
             cd ~/app || { echo 'Brak ~/app na serwerze – najpierw git clone (server-setup.md, pkt 7)'; exit 1; }
             git fetch origin main
             git reset --hard origin/main
-            docker compose up --build -d --remove-orphans db backend caddy
+            docker compose up --build -d --remove-orphans --no-deps db backend caddy
             docker image prune -f
 
       - name: Smoke test GET /health
