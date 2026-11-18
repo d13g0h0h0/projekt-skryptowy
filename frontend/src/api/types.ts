@@ -61,3 +61,18 @@ export type Solution = {
 };
 
 export type CreateSolutionInput = Pick<Solution, "content" | "parts">;
+
+export type RoleEnum = "student" | "teacher"
+
+export type User = {
+  id: UserId
+  username: string
+  email: string
+  scopes: string[]
+  role: RoleEnum
+};
+
+export type LoginInput = {
+  username: string
+  password: string
+}

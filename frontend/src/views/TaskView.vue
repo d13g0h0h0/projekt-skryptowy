@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { type Task, tasksApi } from "@/api";
+import {type Task, type TaskId, tasksApi} from "@/api";
 import { onMounted, ref } from "vue";
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const task = ref<Task>();
 const is_loading = ref<boolean>(true);
 
 onMounted(async () => {
-  task.value = (await tasksApi.get(props.id))!;
+  task.value = (await tasksApi.get(<TaskId>props.id))!;
   is_loading.value = false;
 });
 

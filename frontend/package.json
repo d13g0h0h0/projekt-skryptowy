@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
+    "pinia": "^4.1.0",
     "primevue": "^5.0.4",
     "vue": "^3.5.42",
     "vue-router": "^5.4.0"

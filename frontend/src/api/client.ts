@@ -10,23 +10,39 @@ export class ApiError extends Error {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
   params?: Record<string, string | number | boolean | undefined>
+  skipAuthRedirect?: boolean
+}
+
+const SAFE_METHODS = new Set(['GET']);
+
+function getCookie(name: string) : string | undefined {
+  const prefix = name + "=";
+  const c = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(prefix));
+  return c ? decodeURIComponent(c.slice(prefix.length)) : undefined;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, params, headers, ...rest } = options
+  const { body, params, headers, skipAuthRedirect, ...rest } = options
+  const method = rest.method ?? 'GET';
 
   const query = params
     ? '?' + new URLSearchParams(
     Object.entries(params)
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)]),
-  )
+    )
     : ''
 
+  const csrf = !SAFE_METHODS.has(method) ? getCookie("csrftoken") : undefined;
+
   const res = await fetch(`${BASE_URL}${path}${query}`, {
+    credentials: "include",
     ...rest,
     headers: {
       ...(body !== undefined && { 'Content-Type': 'application/json' }),
+      ...(csrf && { 'X-CSRFToken': csrf}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

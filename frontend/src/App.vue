@@ -1,15 +1,45 @@
 <script setup lang="ts">
 import { tasksApi } from "@/api";
+import { useAuth } from "@/stores/auth.ts";
+import { useRouter } from "vue-router";
 function seed_task() {
   tasksApi.create({"title": "Pierwsze zadanie", "content": "Treść pierwszego zadania."});
+}
+
+const auth = useAuth();
+const router = useRouter();
+
+/**
+ * Logs out the user. Activates the router if the current view has `meta.requiresAuth`.
+ */
+async function logout() {
+  try {
+    await auth.logout();
+  } finally {
+    if (router.currentRoute.value.meta.requiresAuth) {
+      router.replace({ name: "login", query: { redirect: router.currentRoute.value.fullPath } });
+    }
+  }
 }
 
 </script>
 
 <template>
   <nav>
-    <RouterLink to="/">Home</RouterLink> |
-    <button @click="seed_task()">Zaseeduj taski</button>
+    <RouterLink to="/">Home</RouterLink>
+    <template v-if="auth.isLoggedIn">
+      |
+      <button @click="seed_task()">
+        Zaseeduj taski
+      </button>
+      |
+      <button @click="logout">
+        Wyloguj ({{ auth.user?.username }})
+      </button>
+    </template>
+    <RouterLink v-else to="/login">
+      Zaloguj
+    </RouterLink>
   </nav>
   <div id="view">
     <RouterView />
