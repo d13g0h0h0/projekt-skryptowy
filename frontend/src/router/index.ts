@@ -16,6 +16,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/task/:id/edit',
+    name: 'task_edit',
+    component: () => import('@/views/TaskEditView.vue'),
+    props: true,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),

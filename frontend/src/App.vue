@@ -3,7 +3,7 @@ import { tasksApi } from "@/api";
 import { useAuth } from "@/stores/auth.ts";
 import { useRouter } from "vue-router";
 function seed_task() {
-  tasksApi.create({"title": "Pierwsze zadanie", "content": "Treść pierwszego zadania."});
+  tasksApi.create({"title": "Pierwsze zadanie", "content": "Treść pierwszego zadania.", "subtasks": []});
 }
 
 const auth = useAuth();
@@ -37,9 +37,12 @@ async function logout() {
         Wyloguj ({{ auth.user?.username }})
       </button>
     </template>
-    <RouterLink v-else to="/login">
-      Zaloguj
-    </RouterLink>
+    <template v-else>
+      |
+      <RouterLink to="/login">
+        Zaloguj
+      </RouterLink>
+    </template>
   </nav>
   <div id="view">
     <RouterView />

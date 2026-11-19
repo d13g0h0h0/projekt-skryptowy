@@ -25,10 +25,10 @@ export type Task = {
   author: Author
   created_at: Date,
   updated_at: Date,
-  subtasks?: SubTask[]
+  subtasks: SubTask[]
 };
 
-export type CreateTaskInput = Pick<Task, "title" | "content" | "subtasks">;
+export type CreateTaskInput = Pick<Task, "title" | "content"> & { subtasks: CreateSubTaskInput[]};
 
 export type SolutionPart = {
   id: SolutionPartId

@@ -14,7 +14,7 @@ export const tasksApi = {
     request<Task>(`${endpoint}${id}`, { signal }),
 
   update: (id: TaskId, input: CreateTaskInput) =>
-    request<Task>(`${endpoint}${id}`, { method: 'PUT', body: input }),
+    request<Task>(`${endpoint}${id}/`, { method: 'PUT', body: input }),
 
   remove: (id: TaskId) =>
     request<void>(`${endpoint}${id}`, { method: 'DELETE' }),
