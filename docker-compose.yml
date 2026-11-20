@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
 
   backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/d13g0h0h0/projekt-skryptowy-backend}:${BACKEND_TAG:-latest}
     build: ./backend
     env_file: .env
     environment:
@@ -31,6 +32,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/d13g0h0h0/projekt-skryptowy-frontend}:${FRONTEND_TAG:-latest}
     build:
       context: ./frontend
       args:

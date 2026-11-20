@@ -8,29 +8,82 @@ on:
       - "docker-compose.yml"
       - "Caddyfile"
       - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
 
 concurrency:
   group: vps-deploy
   cancel-in-progress: false
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name (GHCR wymaga małych liter)
+        id: image
+        run: echo "name=${REGISTRY}/${GITHUB_REPOSITORY,,}-backend" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      packages: read
     steps:
-      - name: Build & restart backend on VPS
+      - name: Pull & restart backend on VPS
         uses: appleboy/ssh-action@v1
+        env:
+          BACKEND_IMAGE: ${{ needs.build.outputs.image }}
+          BACKEND_TAG: ${{ needs.build.outputs.tag }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: BACKEND_IMAGE,BACKEND_TAG,GHCR_USER,GHCR_TOKEN
           script: |
             set -e
             cd ~/app || { echo 'Brak ~/app na serwerze – najpierw git clone (server-setup.md, pkt 7)'; exit 1; }
+            # repo na serwerze służy już tylko do docker-compose.yml / Caddyfile – nic się tu nie buduje
             git fetch origin main
             git reset --hard origin/main
-            docker compose up --build -d --remove-orphans --no-deps db backend caddy
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export BACKEND_IMAGE BACKEND_TAG
+            docker compose pull backend
+            docker logout ghcr.io
+            docker compose up -d --no-build --remove-orphans --no-deps db backend caddy
             # Caddy nie podchwytuje zmian w Caddyfile sam z siebie: bind mount trzyma
             # stary inode, a `caddy reload` zglasza sukces i dalej serwuje stara
             # konfiguracje. Restart jest jedynym pewnym sposobem, wiec robimy go
@@ -47,10 +100,10 @@ jobs:
             echo "::error::Brak zmiennej API_URL (Settings → Secrets and variables → Actions → Variables)"; exit 1
           fi
           url="${{ vars.API_URL }}/health"
-          for i in $(seq 1 12); do
+          for attempt in $(seq 1 12); do
             if curl --fail --silent --show-error "$url"; then
               echo; echo "OK: $url"; exit 0
             fi
-            echo "attempt $i failed, retrying in 5s..."; sleep 5
+            echo "attempt $attempt failed, retrying in 5s..."; sleep 5
           done
           echo "::error::API did not come up at $url"; exit 1
