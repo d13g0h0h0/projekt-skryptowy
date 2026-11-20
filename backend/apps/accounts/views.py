@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import LoginSerializer, MeSerializer
+from .serializers import LoginSerializer, MeSerializer, RegisterSerializer
 
 
 class LoginView(APIView):
@@ -29,6 +29,18 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request._request)
         return Response(status=204)
+
+class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    @extend_schema(request=RegisterSerializer, responses={201: MeSerializer})
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        login(request._request, user)
+        return Response(MeSerializer(user).data, status=201)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
