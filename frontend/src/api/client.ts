@@ -10,7 +10,6 @@ export class ApiError extends Error {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
   params?: Record<string, string | number | boolean | undefined>
-  skipAuthRedirect?: boolean
 }
 
 const SAFE_METHODS = new Set(['GET']);
@@ -24,7 +23,7 @@ function getCookie(name: string) : string | undefined {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, params, headers, skipAuthRedirect, ...rest } = options
+  const { body, params, headers, ...rest } = options
   const method = rest.method ?? 'GET';
 
   const query = params
@@ -43,6 +42,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers: {
       ...(body !== undefined && { 'Content-Type': 'application/json' }),
       ...(csrf && { 'X-CSRFToken': csrf}),
+
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
