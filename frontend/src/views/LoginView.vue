@@ -58,5 +58,18 @@ async function submit() {
 </template>
 
 <style scoped>
+@reference "@/assets/main.css";
+
+form {
+  @apply flex flex-col max-w-xs items-start;
+}
+
+form button {
+  @apply px-3 py-1;
+}
+
+form > * {
+  @apply mt-3;
+}
 
 </style>

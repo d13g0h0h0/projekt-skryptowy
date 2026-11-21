@@ -7,18 +7,25 @@
   font-weight: normal;
 }
 
-a {
-  text-decoration: none;
-  transition: 0.4s;
-  padding: 3px;
-}
+@layer base {
+  button {
+    @apply cursor-pointer rounded border border-gray-400 bg-blue-200 hover:bg-blue-300 disabled:opacity-50;
+  }
 
-a {
-  @apply text-blue-800
-}
+  a {
+    text-decoration: none;
+    transition: 0.4s;
+    padding: 3px;
+    @apply text-blue-800
+  }
 
-a:visited {
-  @apply text-purple-800
+  a:visited {
+    @apply text-purple-800
+  }
+
+  input {
+    @apply rounded border border-gray-300 px-2 py-1;
+  }
 }
 
 @media (min-width: 1024px) {

@@ -89,19 +89,21 @@ async function save() {
 
 <template>
   <template v-if="draft">
-    <h1>{{ draft.title }}</h1>
-    <MdEditor v-model="draft.content" language="en-US"/>
-    <div v-for="(subtask, n) in draft.subtasks" :key = subtask.id>
-      <button type="button" @click="removeSubtask(n)">Usuń podzadanie</button>
+    <input v-model="draft.title"/>
+    <MdEditor class="md-editor" v-model="draft.content" language="en-US"/>
+    <div class="subtask-editor" v-for="(subtask, n) in draft.subtasks" :key = subtask.id>
+      <button type="button" class="hover:bg-red-500 hover:text-white" @click="removeSubtask(n)">Usuń podzadanie</button>
       <MdEditor v-model="subtask.content" language="en-US"/>
     </div>
-    <button type="button" @click="addSubtask">Dodaj pozadanie</button>
-    <button type="button" :disabled="!hasDirtyDraft || saving" @click="save">
-      {{ saving ? "Zapisywanie..." : "Zapisz" }}
-    </button>
-    <button type="button" :disabled="!hasDirtyDraft || saving" @click="resetDraft">
-      {{ "Odrzuć zmiany" }}
-    </button>
+    <div class="toolbar">
+      <button type="button" @click="addSubtask">Dodaj pozadanie</button>
+      <button type="button" :disabled="!hasDirtyDraft || saving" @click="save">
+        {{ saving ? "Zapisywanie..." : "Zapisz" }}
+      </button>
+      <button type="button" class="hover:bg-red-500 hover:text-white" :disabled="!hasDirtyDraft || saving" @click="resetDraft">
+        {{ "Odrzuć zmiany" }}
+      </button>
+    </div>
   </template>
   <p v-else>
     Coś poszło nie tak, nie udało się załadować zadania do edycji.
@@ -110,5 +112,32 @@ async function save() {
 </template>
 
 <style scoped>
+@reference "@/assets/main.css";
+
+input {
+  @apply text-2xl font-bold text-black mt-2 mb-2;
+}
+
+.md-editor {
+  width: 85%;
+  max-height: 70vh;
+}
+
+.subtask-editor button {
+  @apply mt-1 mb-1 px-3 py-1;
+}
+
+.toolbar {
+  @apply flex items-stretch mt-1 mb-1;
+}
+
+.toolbar button {
+  @apply px-3 py-1 mr-2 border-none;
+}
+
+.subtask-editor button {
+  @apply border-none;
+}
+
 
 </style>

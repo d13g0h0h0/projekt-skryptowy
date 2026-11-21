@@ -17,7 +17,7 @@ const routes = [
   },
   {
     path: '/task/:id/edit',
-    name: 'task_edit',
+    name: 'taskEdit',
     component: () => import('@/views/TaskEditView.vue'),
     props: true,
     meta: { requiresAuth: true }

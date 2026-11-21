@@ -10,7 +10,7 @@ const auth = useAuth();
 const router = useRouter();
 
 /**
- * Logs out the user. Activates the router if the current view has `meta.requiresAuth`.
+ * Logs out the user. Activates the router if the current view has `meta.requiresAuth` and redirects first to `LoginView.vue`.
  */
 async function logout() {
   try {
@@ -26,20 +26,17 @@ async function logout() {
 
 <template>
   <nav>
-    <RouterLink to="/">Home</RouterLink>
+    <RouterLink class="nav-item" to="/">Home</RouterLink>
     <template v-if="auth.isLoggedIn">
-      |
-      <button @click="seed_task()">
+      <button class="nav-item" @click="seed_task()">
         Zaseeduj taski
       </button>
-      |
-      <button @click="logout">
+      <button class="nav-item" @click="logout">
         Wyloguj ({{ auth.user?.username }})
       </button>
     </template>
     <template v-else>
-      |
-      <RouterLink to="/login">
+      <RouterLink class="nav-item" to="/login">
         Zaloguj
       </RouterLink>
     </template>
@@ -57,11 +54,15 @@ header {
 }
 
 nav {
-  @apply bg-blue-200
+  @apply bg-blue-200 flex items-stretch;
 }
 
-nav a {
-  @apply text-black
+nav button {
+  @apply border-0 bg-transparent rounded-none;
+}
+
+nav .nav-item {
+  @apply px-3 py-1 border-r-2 border-r-gray-600 items-center text-black;
 }
 
 #view {

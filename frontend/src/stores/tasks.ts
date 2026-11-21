@@ -22,7 +22,9 @@ export const useTasks = defineStore("task", () => {
     cache.value[task.id] = task;
   }
 
-
+  function remove(id: TaskId) {
+    delete cache.value[id];
+  }
 
   function clear() {
     generation++;
@@ -36,5 +38,5 @@ export const useTasks = defineStore("task", () => {
     clear
   );
 
-  return { cache, get, set, clear };
+  return { cache, get, set, remove, clear };
 });
