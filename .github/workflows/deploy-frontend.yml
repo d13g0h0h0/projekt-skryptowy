@@ -6,29 +6,91 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
 
 concurrency:
   group: vps-deploy
   cancel-in-progress: false
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    # environment potrzebne, żeby czytać vars.VITE_API_URL z production
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name (GHCR wymaga małych liter)
+        id: image
+        run: echo "name=${REGISTRY}/${GITHUB_REPOSITORY,,}-frontend" >> "$GITHUB_OUTPUT"
+
+      - name: Check VITE_API_URL
+        run: |
+          if [ -z "${{ vars.VITE_API_URL }}" ]; then
+            echo "::warning::Brak zmiennej VITE_API_URL – frontend zbuduje się z pustym API URL (zapytania pójdą na ten sam host przez nginx)"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      packages: read
     steps:
-      - name: Build & restart frontend on VPS
+      - name: Pull & restart frontend on VPS
         uses: appleboy/ssh-action@v1
+        env:
+          FRONTEND_IMAGE: ${{ needs.build.outputs.image }}
+          FRONTEND_TAG: ${{ needs.build.outputs.tag }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: FRONTEND_IMAGE,FRONTEND_TAG,GHCR_USER,GHCR_TOKEN
           script: |
             set -e
             cd ~/app || { echo 'Brak ~/app na serwerze – najpierw git clone (server-setup.md, pkt 7)'; exit 1; }
             git fetch origin main
             git reset --hard origin/main
-            docker compose up --build -d --remove-orphans --no-deps frontend caddy
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export FRONTEND_IMAGE FRONTEND_TAG
+            docker compose pull frontend
+            docker logout ghcr.io
+            docker compose up -d --no-build --remove-orphans --no-deps frontend caddy
             # Caddy nie podchwytuje zmian w Caddyfile sam z siebie: bind mount trzyma
             # stary inode, a `caddy reload` zglasza sukces i dalej serwuje stara
             # konfiguracje. Restart jest jedynym pewnym sposobem, wiec robimy go
@@ -45,10 +107,10 @@ jobs:
             echo "::error::Brak zmiennej SITE_URL (Settings → Secrets and variables → Actions → Variables)"; exit 1
           fi
           url="${{ vars.SITE_URL }}"
-          for i in $(seq 1 12); do
+          for attempt in $(seq 1 12); do
             if curl --fail --silent --show-error -o /dev/null "$url"; then
               echo "OK: $url"; exit 0
             fi
-            echo "attempt $i failed, retrying in 5s..."; sleep 5
+            echo "attempt $attempt failed, retrying in 5s..."; sleep 5
           done
           echo "::error::site did not come up at $url"; exit 1
