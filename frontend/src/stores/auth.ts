@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { authApi, type LoginInput, type User } from "@/api";
+import {authApi, type LoginInput, type RegisterInput, type User} from "@/api";
 
 interface AuthState {
   user: User | null,
@@ -43,6 +43,11 @@ export const useAuth = defineStore("auth", {
         this.user = null;
         this.initialized = true;
       }
-    }
+    },
+
+    async register(input: RegisterInput) {
+      this.user = await authApi.register(input);
+      this.initialized = true;
+    },
   }
 });
