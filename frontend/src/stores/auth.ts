@@ -45,9 +45,14 @@ export const useAuth = defineStore("auth", {
       }
     },
 
-    async register(input: RegisterInput) {
-      this.user = await authApi.register(input);
+    async register(input: RegisterInput): Promise<boolean> {
+      const response = await authApi.register(input);
+      if ("pending_approval" in response) {
+        return false;
+      }
+      this.user = response;
       this.initialized = true;
+      return true;
     },
   }
 });
