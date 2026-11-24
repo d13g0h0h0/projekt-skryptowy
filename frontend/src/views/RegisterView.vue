@@ -8,7 +8,8 @@ import { useAuth } from "@/stores/auth.ts";
 const router = useRouter();
 const auth = useAuth();
 
-const registerInput = ref<RegisterInput>({ username: "", email: "", password: "" });
+const registerInput = ref<RegisterInput>({ username: "", email: "", password: "", role: "student" });
+const pendingApproval = ref<boolean>(false);
 const passwordRepeat = ref<string>("");
 const fieldErrors = ref<Record<string, string[]>>({});
 const generalError = ref<string>("");
@@ -27,8 +28,12 @@ async function submit() {
 
   loading.value = true;
   try {
-    await auth.register(registerInput.value);
-    await router.replace({name: "home"});
+    const isLoggedIn = await auth.register(registerInput.value);
+    if (isLoggedIn) {
+      router.replace({ name: "home" });
+    } else {
+      pendingApproval.value = true;
+    }
   }
   catch (requestError) {
     if (requestError instanceof ApiError && requestError.status === 400 && requestError.body) {
@@ -45,7 +50,11 @@ async function submit() {
 </script>
 
 <template>
-  <form @submit.prevent="submit">
+  <div v-if="pendingApproval" class="notice">
+    Konto nauczyciela zostało utworzone i czeka na akceptację administratora.
+    Zalogujesz się, gdy zostanie zatwierdzone.
+  </div>
+  <form v-else @submit.prevent="submit">
     <input v-model="registerInput.username" placeholder="Nazwa użytkownika" autocomplete="username" :disabled="loading" />
     <p v-for="message in fieldErrors.username" :key="message" class="error">{{ message }}</p>
 
@@ -56,6 +65,15 @@ async function submit() {
     <p v-for="message in fieldErrors.password" :key="message" class="error">{{ message }}</p>
 
     <input v-model="passwordRepeat" type="password" placeholder="Powtórz hasło" autocomplete="new-password" :disabled="loading" />
+
+    <fieldset :disabled="loading">
+      <legend>Rejestruję się jako:</legend>
+      <label><input v-model="registerInput.role" type="radio" value="student" /> Student</label>
+      <label><input v-model="registerInput.role" type="radio" value="teacher" /> Nauczyciel</label>
+    </fieldset>
+    <p v-if="registerInput.role === 'teacher'" class="hint">
+      Konto nauczyciela wymaga akceptacji administratora.
+    </p>
 
     <button :disabled="loading">{{ loading ? "Rejestracja..." : "Zarejestruj" }}</button>
     <p v-if="generalError" class="error">{{ generalError }}</p>
@@ -78,5 +96,14 @@ form > * {
 }
 .error {
   @apply text-sm text-red-600 mt-1;
+}
+.notice {
+  @apply mt-6 p-3 bg-yellow-100 border border-yellow-400 max-w-md;
+}
+.hint {
+  @apply text-sm text-gray-500 mt-1;
+}
+fieldset {
+  @apply flex gap-4 border-0 p-0;
 }
 </style>

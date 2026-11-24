@@ -33,10 +33,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True, trim_whitespace=False, validators=[validate_password]
     )
+    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.STUDENT)
 
     class Meta:
         model = User
-        fields = ["username", "email", "password", "first_name", "last_name"]
+        fields = ["username", "email", "password", "first_name", "last_name", "role"]
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        is_teacher = validated_data.get("role") == User.Role.TEACHER
+        return User.objects.create_user(**validated_data, is_active=not is_teacher)

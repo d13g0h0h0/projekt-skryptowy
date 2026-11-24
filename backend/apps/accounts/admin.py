@@ -32,3 +32,10 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
             "fields": ("username", "email", "role", "usable_password", "password1", "password2"),
         }),
     )
+
+    actions = ["approve_teachers"]
+
+    @admin.action(description="Zatwierdź zaznaczonych nauczycieli")
+    def approve_teachers(self, request, queryset):
+        updated_count = queryset.filter(role=User.Role.TEACHER, is_active=False).update(is_active=True)
+        self.message_user(request, f"Zatwierdzono nauczycieli: {updated_count}")

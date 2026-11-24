@@ -1,5 +1,5 @@
 import { request } from "./client.ts";
-import type { LoginInput, RegisterInput, User } from "./types.ts";
+import type {LoginInput, PendingApproval, RegisterInput, User} from "./types.ts";
 
 const endpoint = "/api/auth/";
 
@@ -10,8 +10,8 @@ export const authApi = {
   logout: () =>
     request<void>(`${endpoint}logout/`, { method: 'POST' }),
 
-  register: (input: RegisterInput) =>
-    request<User>(`${endpoint}register/`, { method: 'POST', body: input }),
+    register: (input: RegisterInput) =>
+    request<User | PendingApproval>(`${endpoint}register/`, { method: 'POST', body: input }),
 
   me: () =>
     request<User>(`${endpoint}me/`, { method: 'GET' }),
