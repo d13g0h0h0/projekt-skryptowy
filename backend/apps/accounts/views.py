@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .models import User
 from .serializers import LoginSerializer, MeSerializer, RegisterSerializer
 
 
@@ -13,13 +14,24 @@ class LoginView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @extend_schema(request=LoginSerializer, responses={200: MeSerializer, 401: None})
+    @extend_schema(request=LoginSerializer, responses={200: MeSerializer, 401: None, 403: None})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = authenticate(request._request, **serializer.validated_data)
+
         if user is None:
+            pending_user = User.objects.filter(
+                username=serializer.validated_data["username"], is_active=False
+            ).first()
+            if pending_user and pending_user.check_password(serializer.validated_data["password"]):
+                return Response(
+                    {"detail": "Konto czeka na akceptację administratora.",
+                     "pending_approval": True},
+                    status=403,
+                )
             return Response({"detail": "Invalid username or password."}, status=401)
+
         login(request._request, user)
         return Response(MeSerializer(user).data)
 
@@ -34,11 +46,19 @@ class RegisterView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @extend_schema(request=RegisterSerializer, responses={201: MeSerializer})
+    @extend_schema(request=RegisterSerializer, responses={201: MeSerializer, 202: None})
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        if not user.is_active:
+            return Response(
+                {"detail": "Konto nauczyciela czeka na akceptację administratora.",
+                 "pending_approval": True},
+                status=202,
+            )
+
         login(request._request, user)
         return Response(MeSerializer(user).data, status=201)
 

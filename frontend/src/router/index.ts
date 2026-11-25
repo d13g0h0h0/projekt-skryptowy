@@ -26,7 +26,12 @@ const routes = [
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
-  }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterView.vue'),
+  },
 ];
 
 const router = createRouter({
@@ -46,7 +51,7 @@ router.beforeEach(async (to) => {
     return { name: "login", query: { redirect: to.fullPath } };
   }
 
-  if (to.name === "login" && auth.isLoggedIn) {
+  if ((to.name === "login" || to.name === "register") && auth.isLoggedIn) {
     return { name: "home" };
   }
 });

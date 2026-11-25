@@ -32,8 +32,11 @@ async function submit() {
     await auth.login(loginInput.value);
     router.replace(getRedirect());
   }
-  catch (e) {
-    if (e instanceof ApiError && (e.status === 400 || e.status === 401)) {
+  catch (loginError) {
+    if (loginError instanceof ApiError && loginError.status === 403) {
+      error.value = "Konto czeka na akceptację administratora";
+    }
+    else if (loginError instanceof ApiError && (loginError.status === 400 || loginError.status === 401)) {
       error.value = "Niepoprawna nazwa użytkownika lub hasło";
     }
     else {

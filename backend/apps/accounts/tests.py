@@ -50,13 +50,29 @@ class RegisterTests(APITestCase):
         self.client.post(REGISTER, self.payload, format="json")
         self.assertEqual(self.client.get(ME).status_code, 200)
 
-    def test_cannot_set_role_or_staff_flags(self):
-        data = {**self.payload, "role": "teacher", "is_staff": True, "is_superuser": True}
+    def test_cannot_set_staff_flags(self):
+        data = {**self.payload, "is_staff": True, "is_superuser": True}
         self.client.post(REGISTER, data, format="json")
         user = User.objects.get(username="anna")
-        self.assertEqual(user.role, User.Role.STUDENT)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
+
+    def test_teacher_is_inactive_and_not_logged_in(self):
+        response = self.client.post(REGISTER, {**self.payload, "role": "teacher"}, format="json")
+        self.assertEqual(response.status_code, 202)
+        user = User.objects.get(username="anna")
+        self.assertEqual(user.role, User.Role.TEACHER)
+        self.assertFalse(user.is_active)
+        self.assertNotEqual(self.client.get(ME).status_code, 200)
+
+    def test_pending_teacher_login_returns_403(self):
+        self.client.post(REGISTER, {**self.payload, "role": "teacher"}, format="json")
+        response = self.client.post(LOGIN, {"username": "anna", "password": PASSWORD}, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_invalid_role_rejected(self):
+        response = self.client.post(REGISTER, {**self.payload, "role": "admin"}, format="json")
+        self.assertEqual(response.status_code, 400)
 
     def test_duplicate_username_rejected(self):
         self.client.post(REGISTER, self.payload, format="json")

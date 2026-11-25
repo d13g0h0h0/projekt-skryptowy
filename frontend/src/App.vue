@@ -39,6 +39,9 @@ async function logout() {
       <RouterLink class="nav-item" to="/login">
         Zaloguj
       </RouterLink>
+      <RouterLink class="nav-item" to="/register">
+        Zarejestruj
+      </RouterLink>
     </template>
   </nav>
   <div id="view">
